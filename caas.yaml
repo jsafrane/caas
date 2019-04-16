@@ -18,7 +18,20 @@ spec:
           ports:
           - containerPort: 80
             name: http
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           env:
             - name: CASSANDRA_ADDRESS
               value: "cassandra.default.svc.cluster.local"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: caas
+  name: caas
+spec:
+  ports:
+  - port: 80
+  selector:
+    name: caas
