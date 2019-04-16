@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: caas
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: caas
+  template:
+    metadata:
+      labels:
+        name: caas
+    spec:
+      containers:
+        - name: caas
+          image: quay.io/jsafrane/caas:latest
+          ports:
+          - containerPort: 80
+            name: http
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: CASSANDRA_ADDRESS
+              value: "cassandra.default.svc.cluster.local"
