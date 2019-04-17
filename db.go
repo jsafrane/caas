@@ -52,12 +52,12 @@ func (c *cassandraDB) IncrementAndGet(counterName string) (Counter, error) {
 	observer := &queryLogger{}
 	err := c.increment(counterName, observer)
 	if err != nil {
-		return Counter{}, fmt.Errorf("error incrementing %q: %s", err)
+		return Counter{}, fmt.Errorf("error incrementing %q: %s", counterName, err)
 	}
 
 	count, err := c.get(counterName, observer)
 	if err != nil {
-		return Counter{}, fmt.Errorf("error getting %q: %s", err)
+		return Counter{}, fmt.Errorf("error getting %q: %s", counterName, err)
 	}
 
 	return Counter{Value: count, Name: counterName, Host: c.hostname, DBStats: observer.stats}, nil
