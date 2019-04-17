@@ -45,7 +45,6 @@ func NewCassandra() (DB, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	return &cassandraDB{session, hostname}, nil
 }
 
@@ -66,7 +65,7 @@ func (c *cassandraDB) IncrementAndGet(counterName string) (Counter, error) {
 
 func (c *cassandraDB) increment(name string, observer gocql.QueryObserver) error {
 	query := c.session.Query(`UPDATE counter SET value=value+1 WHERE name = ?`, name)
-	query.Observer(observer)
+	query.Observer(observer).RetryPolicy(&gocql.SimpleRetryPolicy{NumRetries: 5})
 	return query.Exec()
 }
 
@@ -74,7 +73,7 @@ func (c *cassandraDB) get(name string, observer gocql.QueryObserver) (count int6
 	m := map[string]interface{}{}
 	cql := "SELECT name, value FROM counter WHERE name=? LIMIT 1"
 	query := c.session.Query(cql, name).Consistency(gocql.One)
-	query.Observer(observer)
+	query.Observer(observer).RetryPolicy(&gocql.SimpleRetryPolicy{NumRetries: 5})
 	if err := query.MapScan(m); err != nil {
 		return 0, err
 	}
