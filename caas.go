@@ -3,97 +3,93 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"log"
-	"net"
 	"net/http"
-	"os"
 
-	"github.com/gocql/gocql"
 	"github.com/gorilla/mux"
 )
 
 type Counter struct {
-	Name  string `json:"name"`
-	Value int64  `json:"count"`
+	Name    string      `json:"name"`
+	Value   int64       `json:"count"`
+	Host    string      `json:"host"`
+	DBStats []QueryStat `json:"dbStats""`
 }
 
-var session *gocql.Session
-
-func bump(name string) error {
-	return session.Query(`UPDATE counter SET value=value+1 WHERE name = ?`, name).Exec()
+type QueryStat struct {
+	Statement string `json:"statement"`
+	Attempts  int    `json:"attempts"`
+	Time      string `json:"time"`
+	Host      string `json:"host"`
+	Rows      int    `json:"rows"`
 }
 
-func get(name string) (Counter, error) {
-	var counter Counter
-	m := map[string]interface{}{}
-	cql := "SELECT name, value FROM counter WHERE name=? LIMIT 1"
-	query := session.Query(cql, name).Consistency(gocql.One)
-	if err := query.MapScan(m); err != nil {
-		return Counter{}, err
-	}
-	counter = Counter{
-		Name:  m["name"].(string),
-		Value: m["value"].(int64),
-	}
-	return counter, nil
-}
+var db DB
 
-func Get(w http.ResponseWriter, r *http.Request) {
+func Get(w http.ResponseWriter, r *http.Request, renderer func(w http.ResponseWriter, counter Counter)) {
 	vars := mux.Vars(r)
 	name := vars["counter_name"]
-	log.Printf("Processing request for counter %s", name)
+	log.Printf("Processing request for counter %q", name)
 
-	err := bump(name)
+	counter, err := db.IncrementAndGet(name)
 	if err != nil {
-		log.Printf("Error bumping counter %s: %s", name, err)
-		w.WriteHeader(http.StatusInternalServerError)
-		errJson := fmt.Sprintf("{\"error\": \"%s\"}\n", err)
-		w.Write([]byte(errJson))
-		return
-	}
-	counter, err := get(name)
-	if err != nil {
-		log.Printf("Error loading counter %s: %v", name, err)
+		log.Printf("Error incrementing counter %q: %s", name, err)
 		w.WriteHeader(http.StatusInternalServerError)
 		errJson := fmt.Sprintf("{\"error\": \"%s\"}\n", err)
 		w.Write([]byte(errJson))
 		return
 	}
 
-	log.Printf("Counter %s bumped to %+v", name, counter)
+	log.Printf("Counter %q bumped to %+v", name, counter)
 	w.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(w).Encode(counter)
+
+	renderer(w, counter)
 }
 
-func connect() error {
-	addr := os.Getenv("CASSANDRA_ADDRESS")
-	if addr == "" {
-		return fmt.Errorf("CASSANDRA_ADDRESS must be set")
-	}
+func jsonRenderer(w http.ResponseWriter, counter Counter) {
+	json.NewEncoder(w).Encode(counter)
+}
 
-	// We need to resolve all IPs of cassandra server and connect to them
-	ips, err := net.LookupHost(addr)
-	if err != nil {
-		return fmt.Errorf("cannot resolve %s: %s", addr, err)
-	}
+func htmlRenderer(w http.ResponseWriter, counter Counter) {
+	t := `
+<html>
+  <head><title>{{.Name}}</title></head>
+<body>
+<h1>Counter: {{.Name}}, value: {{.Value}}</h1>
+<pre>
+Web server: {{.Host}}
+Queries:
+{{range .DBStats}}
+  DB server: {{.Host}}
+  Query:     {{.Statement}}
+  Attempts:  {{.Attempts}}
+  Time:      {{.Time}}
+{{end}}
+</pre>
+</body>
+</html>`
+	template.Must(template.New("html").Parse(t)).Execute(w, counter)
+}
 
-	log.Printf("Resolved cassandra address %s to %+v", addr, ips)
+func GetJSON(w http.ResponseWriter, r *http.Request) {
+	Get(w, r, jsonRenderer)
+}
 
-	cluster := gocql.NewCluster(ips...)
-	cluster.Keyspace = "caas"
-
-	session, err = cluster.CreateSession()
-	return err
+func GetHTML(w http.ResponseWriter, r *http.Request) {
+	Get(w, r, htmlRenderer)
 }
 
 func main() {
-	err := connect()
+	var err error
+	db, err = NewCassandra()
 	if err != nil {
 		panic(err)
 	}
 	fmt.Println("cassandra init done")
 
 	router := mux.NewRouter().StrictSlash(true)
-	router.HandleFunc("/{counter_name}/json", Get)
+	router.HandleFunc("/{counter_name}/json", GetJSON)
+	router.HandleFunc("/{counter_name}/html", GetHTML)
 	log.Fatal(http.ListenAndServe(":80", router))
 }
