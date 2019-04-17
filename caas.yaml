@@ -35,3 +35,4 @@ spec:
   - port: 80
   selector:
     name: caas
+  type: LoadBalancer
