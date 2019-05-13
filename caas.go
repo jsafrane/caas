@@ -80,9 +80,12 @@ func GetHTML(w http.ResponseWriter, r *http.Request) {
 	Get(w, r, htmlRenderer)
 }
 
-func install() {
-
+func Redirect(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Location", "sample/html")
+	w.WriteHeader(http.StatusPermanentRedirect)
+	w.Write([]byte("use /<counter>/<html>\n"))
 }
+
 func main() {
 	var err error
 	db, err = NewCassandra()
@@ -92,6 +95,7 @@ func main() {
 	fmt.Println("cassandra init done")
 
 	router := mux.NewRouter().StrictSlash(true)
+	router.HandleFunc("/", Redirect)
 	router.HandleFunc("/{counter_name}/json", GetJSON)
 	router.HandleFunc("/{counter_name}/html", GetHTML)
 	log.Fatal(http.ListenAndServe(":80", router))
