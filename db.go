@@ -38,6 +38,10 @@ func NewCassandra() (DB, error) {
 
 	log.Printf("Resolved cassandra address %s to %+v", addr, ips)
 
+	if err := createKeyspace(ips); err != nil {
+		return nil, err
+	}
+
 	cluster := gocql.NewCluster(ips...)
 	cluster.Keyspace = "caas"
 
@@ -45,7 +49,40 @@ func NewCassandra() (DB, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	if err := createTables(session); err != nil {
+		return nil, err
+	}
 	return &cassandraDB{session, hostname}, nil
+}
+
+func createKeyspace(ips []string) error {
+	cluster := gocql.NewCluster(ips...)
+	session, err := cluster.CreateSession()
+	if err != nil {
+		return err
+	}
+	defer session.Close()
+
+	cql := "CREATE KEYSPACE IF NOT EXISTS caas WITH replication = {'class': 'SimpleStrategy', 'replication_factor' : 3};"
+	query := session.Query(cql)
+	if err := query.Exec(); err != nil {
+		log.Printf("error creating keyspace: %s", err)
+		return err
+	}
+	log.Printf("keyspace created")
+	return nil
+}
+
+func createTables(session *gocql.Session) error {
+	cql := "CREATE TABLE IF NOT EXISTS counter (name text, value counter, PRIMARY KEY (name))"
+	query := session.Query(cql)
+	if err := query.Exec(); err != nil {
+		log.Printf("error creating table: %s", err)
+		return err
+	}
+	log.Printf("table created")
+	return nil
 }
 
 func (c *cassandraDB) IncrementAndGet(counterName string) (Counter, error) {

@@ -15,44 +15,35 @@ Usage:
 
 2. Wait for Cassandra pods to be up (~6 minutes !!!)
 
-3. Install database schema to Cassandra:
-    ```
-    kubectl run cqlsh --image=cassandra:latest --generator=run-pod/v1 --restart=Never -- cqlsh cassandra-0.cassandra.default.svc.cluster.local -e  "CREATE KEYSPACE caas WITH replication = {'class': 'SimpleStrategy', 'replication_factor' : 3}; use caas; CREATE TABLE counter (name text, value counter, PRIMARY KEY (name))"
-    ```
-    Check that pod cqlsh finished successfully. It does not log anything on success.
-
-4. For debugging, check Cassandra node status:
+3. For debugging, check Cassandra node status:
     ```
     $ kubectl exec cassandra-0 nodetool status
     
     ```
-5. Run the app (TODO: add service and route)
+
+4. Run the app
     ```
-    kubectl create -f caas.yaml
+    kubectl create -f https://raw.githubusercontent.com/jsafrane/caas/master/caas.yaml
     ```
 
-6. Test the application
+5. Test the application
 
     ```
-    $ kubectl get pod -o wide
-    NAME                   READY   STATUS    RESTARTS   AGE   IP           NODE        NOMINATED NODE   READINESS GATES
-    caas-b4b67f497-82c8h   1/1     Running   0          4s    172.17.0.5   127.0.0.1   <none>           <none>
+    $ kubectl get service
+    NAME         TYPE           CLUSTER-IP   EXTERNAL-IP   PORT(S)        AGE
+    caas         LoadBalancer   10.0.0.2     <pending>     80:31024/TCP   3m36s
 
-    $ curl http://172.17.0.5/first/json
-    {"name":"first","count":1}
-    $ curl http://172.17.0.5/first/json
-    {"name":"first","count":2}
-    $ curl http://172.17.0.5/first/json
-    {"name":"first","count":3}
+    $ curl http://10.0.0.2/first/html
+    <html>
+      <head><title>first</title></head>
+    <body>
+    <h1>Counter: first, value: 6</h1>
+    ...
+    ```
 
-    $ curl http://172.17.0.5/second/json
-    {"name":"second","count":1}
-    $ curl http://172.17.0.5/second/json
-    {"name":"second","count":2}
+    ## http://10.0.0.2/<counter name>/html
 
-    ## http://172.17.0.5/<counter name>/json
-
-7. Scale up
+6. Scale up
     ```
     $ kubectl scale --replicas=4 statefulset/cassandra
     $ kubectl get pod
@@ -61,6 +52,21 @@ Usage:
         ```
         $ kubectl exec cassandra-0 nodetool status
         ```
+
+7. For debugging, check the database content
+    ```
+    $ kubectl run -ti cqlsh --image=cassandra:latest --generator=run-pod/v1 cqlsh cassandra-0.cassandra.default.svc.cluster.local
+    [cqlsh 5.0.1 | Cassandra 3.11.2 | CQL spec 3.4.4 | Native protocol v4]
+    Use HELP for help.
+    cqlsh> use caas;
+    cqlsh:caas> select * from counter;
+    
+     name  | value
+    -------+-------
+     first |     6
+    
+    (1 rows)
+    ```
 
 8. Simulate "graceful" failure
     ```

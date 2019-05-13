@@ -80,6 +80,9 @@ func GetHTML(w http.ResponseWriter, r *http.Request) {
 	Get(w, r, htmlRenderer)
 }
 
+func install() {
+
+}
 func main() {
 	var err error
 	db, err = NewCassandra()
