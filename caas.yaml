@@ -10,7 +10,7 @@ spec:
   template:
     metadata:
       labels:
-        name: caas
+        app: caas
     spec:
       containers:
         - name: caas
@@ -34,5 +34,5 @@ spec:
   ports:
   - port: 80
   selector:
-    name: caas
+    app: caas
   type: LoadBalancer
