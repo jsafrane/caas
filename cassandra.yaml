@@ -1,3 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: cassandra
+  name: cassandra
+spec:
+  clusterIP: None
+  ports:
+  - port: 9042
+  selector:
+    app: cassandra
+---
+
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -30,23 +44,16 @@ spec:
         - containerPort: 9042
           name: cql
         resources:
-          limits:
-            cpu: "500m"
-            memory: 1Gi
           requests:
             cpu: "100m"
+            memory: 1Gi
+          limits:
+            cpu: "500m"
             memory: 1Gi
         securityContext:
           capabilities:
             add:
               - IPC_LOCK
-        lifecycle:
-          preStop:
-            exec:
-              command: 
-              - /bin/sh
-              - -c
-              - nodetool drain
         env:
           - name: MAX_HEAP_SIZE
             value: 512M
@@ -64,6 +71,13 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: status.podIP
+        lifecycle:
+          preStop:
+            exec:
+              command: 
+              - /bin/sh
+              - -c
+              - nodetool drain
         readinessProbe:
           exec:
             command:
