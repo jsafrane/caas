@@ -64,28 +64,13 @@ Usage:
         $ kubectl exec cassandra-0 nodetool status
         ```
 
-7. For debugging, check the database content.
-    ```
-    $ kubectl run -ti cqlsh --image=cassandra:latest --generator=run-pod/v1 cqlsh cassandra-0.cassandra.default.svc.cluster.local
-    [cqlsh 5.0.1 | Cassandra 3.11.2 | CQL spec 3.4.4 | Native protocol v4]
-    Use HELP for help.
-    cqlsh> use caas;
-    cqlsh:caas> select * from counter;
-    
-     name  | value
-    -------+-------
-     first |     6
-    
-    (1 rows)
-    ```
-
-8. Simulate "graceful" failure.
+7. Simulate "graceful" failure.
     ```
     $ kubectl delete pod cassandra-1
     $ kubectl get pod -w
     ```
 
-9. Scale down
+8. Scale down
     ```
     $ kubectl scale --replicas=3 statefulset/cassandra
     $ kubectl exec cassandra-0 nodetool status
