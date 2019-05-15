@@ -48,7 +48,7 @@ spec:
             cpu: "100m"
             memory: 1Gi
           limits:
-            cpu: "500m"
+            cpu: "4"
             memory: 1Gi
         securityContext:
           capabilities:
@@ -67,6 +67,8 @@ spec:
             value: "DC1-K8Demo"
           - name: CASSANDRA_RACK
             value: "Rack1-K8Demo"
+          - name: CASSANDRA_RING_DELAY
+            value: "5000"
           - name: POD_IP
             valueFrom:
               fieldRef:
