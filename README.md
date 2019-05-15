@@ -19,19 +19,6 @@ Usage:
     $ kubectl get pod -w
     ```
 
-    For debugging, you can check Cassandra node status:
-    ```
-    $ kubectl exec cassandra-0 nodetool status
-    Datacenter: DC1-K8Demo
-    ======================
-    Status=Up/Down
-    |/ State=Normal/Leaving/Joining/Moving
-    --  Address    Load       Tokens  Owns (effective)  Host ID                               Rack
-    UN  10.40.0.8  136.15 KiB 32      100.0%            d55b2a33-34a7-4216-8a21-77606832d847  Rack1-K8Demo
-    UN  10.40.2.8  115.63 KiB 32      100.0%            7ead59de-b0ed-4b7f-b1c0-52c0344ace51  Rack1-K8Demo
-    UN  10.40.1.5  113.59 KiB 32      100.0%            0514d1a3-e0e8-4f42-8e3e-697cf958b8d6  Rack1-K8Demo
-    ```
-
 4. Run the app.
     ```
     kubectl create -f https://raw.githubusercontent.com/jsafrane/caas/master/caas.yaml
@@ -53,6 +40,19 @@ Usage:
     ```
 
     `http://35.238.128.239/<counter name>/html`
+
+    For debugging, you can check Cassandra node status:
+    ```
+    $ kubectl exec cassandra-0 nodetool status
+    Datacenter: DC1-K8Demo
+    ======================
+    Status=Up/Down
+    |/ State=Normal/Leaving/Joining/Moving
+    --  Address    Load       Tokens  Owns (effective)  Host ID                               Rack
+    UN  10.40.0.8  136.15 KiB 32      100.0%            d55b2a33-34a7-4216-8a21-77606832d847  Rack1-K8Demo
+    UN  10.40.2.8  115.63 KiB 32      100.0%            7ead59de-b0ed-4b7f-b1c0-52c0344ace51  Rack1-K8Demo
+    UN  10.40.1.5  113.59 KiB 32      100.0%            0514d1a3-e0e8-4f42-8e3e-697cf958b8d6  Rack1-K8Demo
+    ```
 
 6. Scale up.
     ```
