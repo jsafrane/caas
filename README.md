@@ -5,7 +5,7 @@ Usage:
 
 1. Install Cassandra Service and StatefulSet.
     ```
-    kubectl create -f https://raw.githubusercontent.com/jsafrane/caas/master/cassandra.yaml
+    kubectl apply -f https://raw.githubusercontent.com/jsafrane/caas/master/cassandra.yaml
     ```
     
     Changes from [Kubernetes docs](https://kubernetes.io/docs/tutorials/stateful-application/cassandra/):
@@ -14,14 +14,23 @@ Usage:
     * Lower CPU requests. We want to run the demo on a 3 node cluster and we don't require extra speed.
 
 2. Wait for Cassandra pods to be up (~6 minutes !)
+   * While it is starting, we can 'debug' it a bit:
+   
+    ```
+    $ kubectl get pvc
 
-    ```
-    $ kubectl get pod -w
+    $ kubectl describe pvc
+
+    $ kubectl get pod
+    
+    $ kubectl describe pod cassandra-0
+    
+    $ kubectl logs cassandra-0
     ```
 
-4. Run the app.
+4. Install the application.
     ```
-    kubectl create -f https://raw.githubusercontent.com/jsafrane/caas/master/caas.yaml
+    kubectl apply -f https://raw.githubusercontent.com/jsafrane/caas/master/caas.yaml
     ```
 
 5. Test the application.
