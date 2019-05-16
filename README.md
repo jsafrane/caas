@@ -5,7 +5,7 @@ Usage:
 
 1. Install Cassandra Service and StatefulSet.
     ```
-    kubectl create -f https://raw.githubusercontent.com/jsafrane/caas/master/cassandra.yaml
+    kubectl apply -f https://raw.githubusercontent.com/jsafrane/caas/master/cassandra.yaml
     ```
     
     Changes from [Kubernetes docs](https://kubernetes.io/docs/tutorials/stateful-application/cassandra/):
@@ -21,7 +21,7 @@ Usage:
 
 4. Run the app.
     ```
-    kubectl create -f https://raw.githubusercontent.com/jsafrane/caas/master/caas.yaml
+    kubectl apply -f https://raw.githubusercontent.com/jsafrane/caas/master/caas.yaml
     ```
 
 5. Test the application.
