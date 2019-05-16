@@ -14,12 +14,21 @@ Usage:
     * Lower CPU requests. We want to run the demo on a 3 node cluster and we don't require extra speed.
 
 2. Wait for Cassandra pods to be up (~6 minutes !)
-
+   * While it is starting, we can 'debug' it a bit:
+   
     ```
-    $ kubectl get pod -w
+    $ kubectl get pvc
+
+    $ kubectl describe pvc
+
+    $ kubectl get pod
+    
+    $ kubectl describe pod cassandra-0
+    
+    $ kubectl logs cassandra-0
     ```
 
-4. Run the app.
+4. Install the application.
     ```
     kubectl apply -f https://raw.githubusercontent.com/jsafrane/caas/master/caas.yaml
     ```
