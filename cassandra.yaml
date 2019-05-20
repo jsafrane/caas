@@ -1,3 +1,5 @@
+# Headless Service that creates DNS entries for Cassnadra pods, i.e.
+# for pods with label "app=cassandra".
 apiVersion: v1
 kind: Service
 metadata:
@@ -12,6 +14,7 @@ spec:
     app: cassandra
 ---
 
+# Cassandra StatefulSet
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -29,7 +32,9 @@ spec:
       labels:
         app: cassandra
     spec:
+      # Do not kill Cassandra pods immediately, give them some time to finish gracefully.
       terminationGracePeriodSeconds: 1800
+
       containers:
       - name: cassandra
         image: gcr.io/google-samples/cassandra:v13
@@ -44,12 +49,15 @@ spec:
         - containerPort: 9042
           name: cql
         resources:
+          # Minimum requirement.
           requests:
-            cpu: "100m"
+            cpu: "100m" # 0.1 CPU
             memory: 1Gi
+          # Maximum req.
           limits:
-            cpu: "4"
+            cpu: "4"    # 4 CPUs
             memory: 1Gi
+        # Cassandra needs capability to lock shared mem.
         securityContext:
           capabilities:
             add:
@@ -73,6 +81,7 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: status.podIP
+        # Before killing container, execute this command so the daemon can exit gracefully.
         lifecycle:
           preStop:
             exec:
@@ -80,6 +89,7 @@ spec:
               - /bin/sh
               - -c
               - nodetool drain
+        # Wait until this command succeeds before declaring this pod read to serve requests.
         readinessProbe:
           exec:
             command:
@@ -96,7 +106,6 @@ spec:
           mountPath: /cassandra_data
   # These are converted to volume claims by the controller
   # and mounted at the paths mentioned above.
-  # do not use these in production until ssd GCEPersistentDisk or other ssd pd
   volumeClaimTemplates:
   - metadata:
       name: cassandra-data
